@@ -1,4 +1,5 @@
 from libs import *
+from config import bd_name
 
 @dataclass
 class Product:
@@ -6,23 +7,22 @@ class Product:
     link: str
     price: float
 
-def Create_bd():
-    connection = sqlite3.connect('1.db')
-    connection.execute("""
-        CREATE TABLE IF NOT EXISTS source (
-            id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            link TEXT NOT NULL,
-            price REAL NOT NULL
-        )
-    """)
-    print("Database has been created")
+def create_bd():
+    with sqlite3.connect(bd_name) as connection:
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS source (
+                id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                link TEXT NOT NULL,
+                price REAL NOT NULL
+            )
+        """)
 
 
-def parser(url:str, max_item: int):
+def parse(url:str, max_item: int):
     page = 1
     count_items = 0
-    Create_bd()
+    create_bd()
     while max_item > count_items:
         list_product = []
         res = requests.get(f"{url}/{page}/")
@@ -37,80 +37,74 @@ def parser(url:str, max_item: int):
             name = name_product.find("span", class_= "text").text
             price = float("".join(product.find("span", class_= "value").text.split()))
             list_product.append(Product(name=name, link=link, price=price))
-        Insert_db(list_product)
+        insert_db(list_product)
         page += 1
 
 
 
-def Insert_db (products: list[Product]):
-    connection = sqlite3.connect('1.db')
-    cursor = connection.cursor()
-    for product in products:
-        cursor.execute('INSERT INTO source (name, link, price) VALUES (?, ?, ?)', (product.name, product.link, product.price))
-    connection.commit()
-    connection.close()
+def insert_db (products: list[Product]):
+    with sqlite3.connect(bd_name) as connection:
+        cursor = connection.cursor()
+        for product in products:
+            cursor.execute('INSERT INTO source (name, link, price) VALUES (?, ?, ?)', (product.name, product.link, product.price))
+        connection.commit()
 
 #Печатаем все строки в БД
-def Print_all():
-    connection = sqlite3.connect('1.db')
-    cursor = connection.cursor()
-    cursor.execute('SELECT * FROM source')
-    answers = cursor.fetchall()
-    for answer in answers:
-      print(answer)
-    connection.close()
+def print_all():
+    with sqlite3.connect(bd_name) as connection:
+        cursor = connection.cursor()
+        cursor.execute('SELECT * FROM source')
+        answers = cursor.fetchall()
+        for answer in answers:
+          print(answer)
 
 # Выбираем и сортируем холодильники по убыванию цены (Выводит id и цену)
-def Sort_in_descending_order():
-    connection = sqlite3.connect('1.db')
-    cursor = connection.cursor()
-    cursor.execute('SELECT id, price FROM source ORDER BY price DESC')
-    results = cursor.fetchall()
-    for row in results:
-      print(row)
-    connection.close()
+def sort_in_descending_order():
+    with sqlite3.connect(bd_name) as connection:
+        cursor = connection.cursor()
+        cursor.execute('SELECT id, price FROM source ORDER BY price DESC')
+        results = cursor.fetchall()
+        for row in results:
+          print(row)
 
 # Выбираем и сортируем холодильники по возрастанию цены (Выводит id и цену)
-def Sort_in_ascending_order():
-    connection = sqlite3.connect('1.db')
-    cursor = connection.cursor()
-    cursor.execute('SELECT id, price FROM source ORDER BY price ASC')
-    results = cursor.fetchall()
-    for row in results:
-      print(row)
-    connection.close()
+def sort_in_ascending_order():
+    with sqlite3.connect(bd_name) as connection:
+        cursor = connection.cursor()
+        cursor.execute('SELECT id, price FROM source ORDER BY price ASC')
+        results = cursor.fetchall()
+        for row in results:
+          print(row)
 
 # Выбираем холодильники у которых цена больше n рублей (Выводит название и цену)
-def The_output_is_more_than_price(min_price: int):
-    connection = sqlite3.connect('1.db')
-    cursor = connection.cursor()
-    cursor.execute('''                                                              
-    SELECT name, price
-    FROM source
-    GROUP BY price
-    HAVING AVG(price) > ?
-    ORDER BY price DESC
-    ''', (min_price,))
-    results = cursor.fetchall()
-    for row in results:
-      print(row)
-    connection.close()
+def the_output_is_more_than_price(min_price: int):
+    with sqlite3.connect(bd_name) as connection:
+        cursor = connection.cursor()
+        cursor.execute('''                                                              
+        SELECT name, price
+        FROM source
+        GROUP BY price
+        HAVING AVG(price) > ?
+        ORDER BY price DESC
+        ''', (min_price,))
+        results = cursor.fetchall()
+        for row in results:
+          print(row)
 
 
 # Выбираем холодильники у которых цена меньше n рублей (Выводит название и цену)
-def The_output_is_less_than_price(max_price: int):
-    connection = sqlite3.connect('1.db')
-    cursor = connection.cursor()
-    cursor.execute('''                                                              
-    SELECT name, price
-    FROM source
-    GROUP BY price
-    HAVING AVG(price) < ?
-    ORDER BY price DESC
-    ''', (max_price,))
-    results = cursor.fetchall()
-    for row in results:
-      print(row)
-    connection.close()
+def the_output_is_less_than_price(max_price: int):
+    with sqlite3.connect(bd_name) as connection:
+        cursor = connection.cursor()
+        cursor.execute('''                                                              
+        SELECT name, price
+        FROM source
+        GROUP BY price
+        HAVING AVG(price) < ?
+        ORDER BY price DESC
+        ''', (max_price,))
+        results = cursor.fetchall()
+        for row in results:
+          print(row)
 
 
