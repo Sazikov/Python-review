@@ -1,4 +1,0 @@
-requests
-lxml
-dataclasses
-bs4
