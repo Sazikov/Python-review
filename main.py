@@ -2,16 +2,12 @@ import requests
 import lxml
 import sqlite3
 from bs4 import BeautifulSoup
-import os
 
 import config
 
 
 def insert_db (links, names, prices):
-    connection = sqlite3.connect(config.db_name)
-    connection.close()
-    os.remove(config.db_name)
-    connection = sqlite3.connect(config.db_name)
+    connection = sqlite3.connect(config.db_path)
 
     connection.execute("""
         CREATE TABLE IF NOT EXISTS source (
@@ -23,8 +19,16 @@ def insert_db (links, names, prices):
     """)
     cursor = connection.cursor()
     n = len(names)
+    exist_names = cursor.execute('SELECT name FROM source').fetchall()
+    e_n = len(exist_names)
     for i in range(n):
-        cursor.execute('INSERT INTO source (name, link, price) VALUES (?, ?, ?)', (names[i], links[i], prices[i]))
+        fl = False
+        for j in range(e_n):
+            if names[i] == exist_names[j][0]:
+                fl = True
+                break
+        if not fl:
+            cursor.execute('INSERT INTO source (name, link, price) VALUES (?, ?, ?)', (names[i], links[i], prices[i]))
     connection.commit()
     connection.close()
 
@@ -56,7 +60,7 @@ def parser(url):
     insert_db(list_url_products, list_names, list_prices)
 
 def print_all():
-    connection = sqlite3.connect(config.db_name)
+    connection = sqlite3.connect(config.db_path)
     cursor = connection.cursor()
     cursor.execute('SELECT name, price, link FROM source')
     answers = cursor.fetchall()
@@ -66,7 +70,7 @@ def print_all():
 
 def the_output_is_less_than_price(query):
     query = float(query)
-    connection = sqlite3.connect(config.db_name)
+    connection = sqlite3.connect(config.db_path)
     cursor = connection.cursor()
     cursor.execute('''                                                              
     SELECT name, price, link
